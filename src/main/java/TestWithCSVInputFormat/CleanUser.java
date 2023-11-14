@@ -5,8 +5,6 @@ import CSVInputFormat.CSVNLineInputFormat;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
@@ -21,28 +19,23 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
 /**
- * This file will not be used in official, just testing for fun
+ * This operation is the clean the 17 user files, to remove unnecessary fields, and only store {user_id: reputation}
+ * We only filter reputation > 10, because if we keep all the users, the file size is 200MB, which will be too large to keep in cache
+ * By filtering reputation > 10, the file size is minimized to 50MB.
+ * This filtering will not affect the ML algorithm, because if a user has <10 reputation, we can safely consider it as a zombie user and not factor in the user score.
  */
+public class CleanUser {
 
-public class TopUser {
+  public static class CleanUserMapper extends Mapper<Object, List<Text>, Text, IntWritable> {
 
-  private static int topN = 10;
-
-  public static class UserMapper extends Mapper<Object, List<Text>, Text, IntWritable> {
-
-    private TreeMap<Integer, String> tmap; // by default ascending order
-
-    public UserMapper()
+    public CleanUserMapper()
         throws ParseException {
     }
 
-    @Override
-    public void setup(Context context) throws IOException, InterruptedException {
-      tmap = new TreeMap<Integer, String>();
-    }
 
     public void map(Object key, List<Text> values, Context context)
         throws IOException, InterruptedException {
+
       if (values.size() != 13) {
         return;
       }
@@ -51,51 +44,22 @@ public class TopUser {
         return;
       }
       Integer reputation = Integer.parseInt(String.valueOf(values.get(7)));
-      tmap.put(reputation, id);
-      if (tmap.size() > topN) {
-        tmap.remove(tmap.firstKey());
-      }
-    }
-
-    @Override
-    public void cleanup(Context context) throws IOException, InterruptedException {
-      for (Map.Entry<Integer, String> entry : tmap.entrySet()) {
-        Integer reputation = entry.getKey();
-        String id = entry.getValue();
+      if (reputation > 10) {
         context.write(new Text(id), new IntWritable(reputation));
       }
+
     }
   }
 
-  public static class TopUsersReducer extends Reducer<Text, IntWritable, IntWritable, Text> {
+  public static class CleanUserReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
 
-    private TreeMap<Integer, String> tmap;
-
-    @Override
-    public void setup(Context context) {
-      tmap = new TreeMap<Integer, String>();
-    }
 
     public void reduce(Text key, Iterable<IntWritable> values, Context context)
         throws IOException, InterruptedException {
-      String id = key.toString();
       for (IntWritable val : values) {
-        int rep = val.get();
-        tmap.put(rep, id);
-        if (tmap.size() > topN) {
-          tmap.remove(tmap.firstKey());
-        }
+        context.write(key, val);
       }
 
-    }
-
-    @Override
-    public void cleanup(Context context) throws IOException, InterruptedException {
-      for (Map.Entry<Integer, String> entry : tmap.entrySet()) {
-        Integer reputation = entry.getKey();
-        String id = entry.getValue();
-        context.write(new IntWritable(reputation), new Text(id));
-      }
     }
   }
 
@@ -119,13 +83,18 @@ public class TopUser {
       getConf().setBoolean(CSVLineRecordReader.IS_ZIPFILE, false);
       Job csvJob = new Job(getConf(), "csv_test_job");
       csvJob.setJarByClass(Runner.class);
+
+      MultipleInputs.addInputPath(csvJob, new Path(args[0]), CSVNLineInputFormat.class,
+          CleanUserMapper.class);
+      csvJob.setReducerClass(CleanUserReducer.class);
+
+      csvJob.setNumReduceTasks(1);
+
       csvJob.setMapOutputKeyClass(Text.class);
       csvJob.setMapOutputValueClass(IntWritable.class);
-      MultipleInputs.addInputPath(csvJob, new Path(args[0]), CSVNLineInputFormat.class,
-          UserMapper.class);
-      csvJob.setReducerClass(TopUsersReducer.class);
-      csvJob.setOutputKeyClass(IntWritable.class);
-      csvJob.setOutputValueClass(Text.class);
+      csvJob.setOutputKeyClass(Text.class);
+      csvJob.setOutputValueClass(IntWritable.class);
+
       FileOutputFormat.setOutputPath(csvJob, new Path(args[1]));
       csvJob.waitForCompletion(true);
       return 0;
@@ -140,5 +109,4 @@ public class TopUser {
     res = ToolRunner.run(new Configuration(), importer, args);
 
   }
-
 }
