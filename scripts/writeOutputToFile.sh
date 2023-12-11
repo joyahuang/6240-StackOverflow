@@ -1,0 +1,1 @@
+hadoop fs -getmerge /user/camille/generatemodel/output/ hadoopOutput.txt

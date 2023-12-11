@@ -1,0 +1,1 @@
+hadoop fs -cat /user/camille/generatemodel/output/part-r-*
