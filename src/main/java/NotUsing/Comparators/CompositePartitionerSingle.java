@@ -1,4 +1,4 @@
-package Comparators;
+package NotUsing.Comparators;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Partitioner;

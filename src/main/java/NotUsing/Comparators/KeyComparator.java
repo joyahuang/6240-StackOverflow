@@ -1,6 +1,6 @@
-package Comparators;
+package NotUsing.Comparators;
 
-import Writable.CompositeKey;
+import NotUsing.Writable.CompositeKey;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;
 

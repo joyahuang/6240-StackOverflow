@@ -1,12 +1,12 @@
-package Job2;
+package NotUsing.Job2;
 
 import CSVInputFormat.CSVLineRecordReader;
 import CSVInputFormat.CSVNLineInputFormat;
-import Comparators.CompositePartitioner;
-import Comparators.GroupComparator;
-import Comparators.KeyComparator;
-import Writable.CompositeKey;
-import Writable.PostWritable;
+import NotUsing.Comparators.CompositePartitioner;
+import NotUsing.Comparators.GroupComparator;
+import NotUsing.Comparators.KeyComparator;
+import NotUsing.Writable.CompositeKey;
+import NotUsing.Writable.PostWritable;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;

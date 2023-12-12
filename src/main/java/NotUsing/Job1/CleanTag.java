@@ -1,12 +1,12 @@
-package Job1;
+package NotUsing.Job1;
 
 import CSVInputFormat.CSVLineRecordReader;
 import CSVInputFormat.CSVNLineInputFormat;
-import Comparators.CompositePartitionerSingle;
-import Comparators.GroupComparator;
-import Comparators.KeyComparator;
-import Writable.CompositeKey;
-import Writable.TagWritable;
+import NotUsing.Comparators.CompositePartitionerSingle;
+import NotUsing.Comparators.GroupComparator;
+import NotUsing.Comparators.KeyComparator;
+import NotUsing.Writable.CompositeKey;
+import NotUsing.Writable.TagWritable;
 import java.io.IOException;
 import java.util.List;
 import org.apache.hadoop.conf.Configuration;
