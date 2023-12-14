@@ -45,20 +45,36 @@ public class JoinAnswerPost {
         String acceptedAnswerId = String.valueOf(values.get(3));
         int score = Integer.parseInt(String.valueOf(values.get(17)));
         int answerCount = Integer.parseInt(String.valueOf(values.get(4)));
-        if (acceptedAnswerId.length() > 0) {
-          PostWritable post = new PostWritable(postId, acceptedAnswerId, score, answerCount,
-              0, true);
-          context.write(new Text(acceptedAnswerId), post);
+
+        int commentCount = Integer.parseInt(String.valueOf(values.get(5)));
+        int viewCount = Integer.parseInt(String.valueOf(values.get(19)));
+        String favCountStr = String.valueOf(values.get(8));
+        int favCount = favCountStr.equals("") ? 0 : Integer.parseInt(favCountStr);
+
+        int bodyLen = String.valueOf(values.get(2)).length();
+        String tagArr = String.valueOf(values.get(18));
+        String[] tags = tagArr.split("\\|");
+        int tagsCount = tags.length;
+
+        boolean hasAcceptedAnswer = true;
+        if (acceptedAnswerId.length() == 0) {
+          hasAcceptedAnswer = false;
+          acceptedAnswerId = "dummy";
         }
+        PostWritable post = new PostWritable(postId, acceptedAnswerId, score, answerCount,
+            true, commentCount, viewCount, favCount, bodyLen, tagsCount, hasAcceptedAnswer);
+        context.write(new Text(acceptedAnswerId), post);
+
       } else if (post_type_id.equals("2")) {
         // answers
         String postId = String.valueOf(values.get(0));
         int score = Integer.parseInt(String.valueOf(values.get(17)));
-        PostWritable post = new PostWritable(postId, "0", score, 0, 0, false);
-        context.write(new Text(postId), post);
+        int commentCount = Integer.parseInt(String.valueOf(values.get(5)));
+        int bodyLen = String.valueOf(values.get(2)).length();
+        PostWritable answer = new PostWritable(postId, score, bodyLen, commentCount, false);
+        context.write(new Text(postId), answer);
       }
     }
-
   }
 
   public static class JoinReducer extends
@@ -70,14 +86,27 @@ public class JoinAnswerPost {
       PostWritable post = null;
       PostWritable answer = null;
       for (PostWritable value : values) {
-        if (value.isPost()) {
-          post = value;
-        } else {
-          answer = value;
+        if (!value.isPost()) {
+          answer = new PostWritable(value);
+        } else if (value.isPost()) {
+//          if (value.isHasAcceptedAnswer() == false) {
+//            value.setAcceptedScore(Integer.MIN_VALUE);
+//            value.setAnswerBodyLen(Integer.MIN_VALUE);
+//            value.setAnswerCommentCount(Integer.MIN_VALUE);
+//            context.write(NullWritable.get(), value);
+//            continue;
+//          } else {
+          post = new PostWritable(value);
+//          }
         }
       }
       if (post != null && answer != null) {
-        post.setAcceptedScore(answer.getScore());
+        final int acceptedScore = answer.getScore();
+        final int answerBodyLen = answer.getAnswerBodyLen();
+        final int answerCommentCount = answer.getAnswerCommentCount();
+        post.setAcceptedScore(acceptedScore);
+        post.setAnswerBodyLen(answerBodyLen);
+        post.setAnswerCommentCount(answerCommentCount);
         context.write(NullWritable.get(), post);
       }
     }
@@ -110,7 +139,7 @@ public class JoinAnswerPost {
 
       csvJob.setJarByClass(Runner.class);
       csvJob.setReducerClass(JoinReducer.class);
-      csvJob.setNumReduceTasks(10);
+      csvJob.setNumReduceTasks(1);
       MultipleInputs.addInputPath(csvJob, new Path(args[0]), CSVNLineInputFormat.class,
           ReplicatedJoinMapper.class);
       MultipleInputs.addInputPath(csvJob, new Path(args[1]), CSVNLineInputFormat.class,
