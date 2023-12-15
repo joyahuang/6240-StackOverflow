@@ -1,10 +1,4 @@
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-
-import org.apache.hadoop.io.Writable;
-
-public class LinearRegressionModel implements Writable {
+public class LinearRegressionModel {
     private double b0;
     private double b1;
     private double b2;
@@ -29,23 +23,13 @@ public class LinearRegressionModel implements Writable {
         return this.b2;
     }
 
-    @Override
-    public void write(DataOutput out) throws IOException {
-        out.writeDouble(b0);
-        out.writeDouble(b1);
-        out.writeDouble(b2);
-    }
-
-    @Override
-    public void readFields(DataInput in) throws IOException {
-        b0 = in.readDouble();
-        b1 = in.readDouble();
-        b2 = in.readDouble();
+    public double getPredictedY(double X1, double X2) {
+        // formula: y_pred = b1X1 + b2X2 + b0
+        return (this.b1 * X1) + (this.b2 * X2) + this.b0;
     }
 
     @Override
     public String toString() {
-        return String.format(
-            "{\"b0\": %f, \"b1\": %f, \"b2\": \"%f\"}", b0, b1, b2);
+        return String.format("Linear Regression Model: predictedY = %fX1 + %fX2 + %f\n", this.b1, this.b2, this.b0);
     }
 }

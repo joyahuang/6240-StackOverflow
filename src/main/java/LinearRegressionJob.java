@@ -34,11 +34,10 @@ public class LinearRegressionJob {
           throw new RuntimeException("Found non-zero key in reducer.");
         }
         
-        LinearRegressionModelGenerator modelGenerator = LinearRegressionModelGenerator.getInstance();
-        RegressionMetrics regMetrics = modelGenerator.trainModel(values);
+        LinearRegressionExecutor linearRegressionExecutor = LinearRegressionExecutor.getInstance();
+        LinearRegressionResult result = linearRegressionExecutor.execute(values);
 
-        System.out.println(regMetrics.toString());
-        Text value = new Text(regMetrics.toString());
+        Text value = new Text(result.toString());
         context.write(NullWritable.get(), value);
     }
   }

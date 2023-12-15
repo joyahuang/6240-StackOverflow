@@ -2,25 +2,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class LinearRegressionModelGenerator {
+public class LinearRegressionExecutor {
 
     private static final double TEST_SPLIT_THRESHOLD = 0.2;
-    private static final LinearRegressionModelGenerator instance = new LinearRegressionModelGenerator();
+    private static final LinearRegressionExecutor instance = new LinearRegressionExecutor();
 
     private List<Record> testData = new ArrayList<>();
 
-    private LinearRegressionModelGenerator() {}
+    private LinearRegressionExecutor() {}
 
-    public static LinearRegressionModelGenerator getInstance() {
+    public static LinearRegressionExecutor getInstance() {
         return instance;
     }
 
-    // public void execute(Iterable<Record> records) {
-    //     trainAndGenerateLinearRegressionModel(records);
-    //     testAndEvaluateModel();
-    // }
+    public LinearRegressionResult execute(Iterable<Record> records) {
+        LinearRegressionResult result = new LinearRegressionResult();
 
-    public RegressionMetrics trainModel(Iterable<Record> records) {
         double count = 0;
         double sumX1 = 0;
         double sumX2 = 0;
@@ -32,7 +29,6 @@ public class LinearRegressionModelGenerator {
         double sumX1X2 = 0;
 
         for (Record record : records) {
-            // System.out.println(record.toString());
 
             // Extract test data
             if (random() <= TEST_SPLIT_THRESHOLD) {
@@ -56,33 +52,21 @@ public class LinearRegressionModelGenerator {
             sumX1X2 += X1 * X2;
         }
 
-        System.out.println(
-            "count: " + count + "\n" + 
-            "sumX1: " + sumX1 + "\n" + 
-            "sumX2: " + sumX2 + "\n" + 
-            "sumY: " + sumY + "\n" + 
-            "sumX1Squared: " + sumX1Squared + "\n" + 
-            "sumX2Squared: " + sumX2Squared + "\n" + 
-            "sumX1Y: " + sumX1Y + "\n" + 
-            "sumX2Y: " + sumX2Y + "\n" + 
-            "sumX1X2: " + sumX1X2
-        );
+        LinearRegressionModel model = generateModel(count, sumX1, sumX2, sumY, sumX1Y, sumX2Y, sumX1X2, sumX1Squared, sumX2Squared);
+        result.setModel(model);
 
+        runTestsAndGenerateMetrics(result, testData);
+
+        return result;
+    }
+
+    private LinearRegressionModel generateModel(double count, double sumX1, double sumX2, double sumY, double sumX1Y, double sumX2Y, double sumX1X2, double sumX1Squared, double sumX2Squared) {
         // Calculates regression sums
         double regSumX1Squared = sumX1Squared - squared(sumX1) / count;
-        System.out.println(regSumX1Squared);
-
         double regSumX2Squared = sumX2Squared - squared(sumX2) / count;
-        System.out.println(regSumX2Squared);
-
         double regSumX1Y = sumX1Y - (sumX1 * sumY) / count;
-        System.out.println(regSumX1Y);
-
         double regSumX2Y = sumX2Y - (sumX2 * sumY) / count;
-        System.out.println(regSumX2Y);
-
         double regSumX1X2 = sumX1X2 - (sumX1 * sumX2) / count;
-        System.out.println(regSumX1X2);
 
         // calculate B values
         double denominator_b1_b2 = (regSumX1Squared * regSumX2Squared) - squared(regSumX1X2);
@@ -96,16 +80,10 @@ public class LinearRegressionModelGenerator {
 
         double b0 = YMean - b1 * X1Mean - b2 * X2Mean;
 
-        System.out.println(String.format("B1: %f", b1));
-        System.out.println(String.format("B2: %f", b2));
-        System.out.println(String.format("B0: %f", b0));
+        return new LinearRegressionModel(b0, b1, b2);
+    }
 
-        // LinearRegressionModel model = new LinearRegressionModel(b0, b1, b2);
-        // return model;
-
-        System.out.println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-
-        // Test Model
+    private LinearRegressionResult runTestsAndGenerateMetrics(LinearRegressionResult result, List<Record> testData) {
         if (testData.isEmpty()) {
             throw new RuntimeException("Test data is empty");
         }
@@ -116,19 +94,20 @@ public class LinearRegressionModelGenerator {
         double sumSquaredResiduals = 0.0;
         double meanActual = 0.0;
         List<Double> yActualList = new ArrayList<>();
+        List<PredictionResult> samplePredictionResultsList = new ArrayList<>();
 
         for (Record record : testData) {
             double X1 = record.getX1();
             double X2 = record.getX2();
             double actualY = record.getY();
 
-            // formula: y_pred = b1X1 + b2X2 + b0
-            double predictedY = (b1 * X1) + (b2 * X2) + b0;
+            double predictedY = result.getModel().getPredictedY(X1, X2);
 
+            // Print out a small subset of predicted records
             if (random() <= 0.08) {
-                System.out.println(String.format("Predicted: post score: %f, answer count: %f, accepted answer score: %f", predictedY, X1, X2));
-                System.out.println(String.format("Actual:    post score: %f, answer count: %f, accepted answer score: %f", actualY, X1, X2));
-                System.out.println("----------------------------------------------------------------------------------------");
+                Record predictedRecord = new Record(predictedY, X1, X2);
+                PredictionResult predictionResult = new PredictionResult(predictedRecord, record);
+                samplePredictionResultsList.add(predictionResult);
             }
 
             // Calculations for R-Squared, MAE, RMSE
@@ -140,7 +119,16 @@ public class LinearRegressionModelGenerator {
             meanActual += actualY;
         }
 
-        // Calculate R-Squared, MAE, RMSE
+        result.setPredictionResults(samplePredictionResultsList);
+
+        RegressionMetrics metrics = calculatePerformanceMetrics(yActualList, sumSquaredResiduals, sumAbsoluteErrors, sumSquaredErrors, meanActual);
+        result.setMetrics(metrics);
+
+        return result;
+    }
+
+    private RegressionMetrics calculatePerformanceMetrics(List<Double> yActualList, double sumSquaredResiduals, double sumAbsoluteErrors, double sumSquaredErrors, double meanActual) {
+         // Calculate R-Squared, MAE, RMSE
         meanActual /= yActualList.size();
 
         double ssTot = 0.0;
@@ -151,8 +139,6 @@ public class LinearRegressionModelGenerator {
         double rSquared = 1 - (sumSquaredResiduals / ssTot);
         double mae = sumAbsoluteErrors / yActualList.size();
         double rmse = Math.sqrt(sumSquaredErrors / yActualList.size());
-
-        System.out.println(String.format("Linear Regression Model: predictedY = %fX1 + %fX2 + %f", b1, b2, b0));
 
         return new RegressionMetrics(rSquared, mae, rmse);
     }
