@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class LinearRegressionModelGenerator {
 
@@ -34,7 +35,7 @@ public class LinearRegressionModelGenerator {
             // System.out.println(record.toString());
 
             // Extract test data
-            if (Math.random() <= TEST_SPLIT_THRESHOLD) {
+            if (random() <= TEST_SPLIT_THRESHOLD) {
                 testData.add(record.copy());
                 continue;
             }
@@ -109,8 +110,6 @@ public class LinearRegressionModelGenerator {
             throw new RuntimeException("Test data is empty");
         }
 
-        double testRecordsCount = 0;
-        double correctPredictionCount = 0;
         // Variables for R-Squared, MAE, RMSE
         double sumSquaredErrors = 0.0;
         double sumAbsoluteErrors = 0.0;
@@ -119,7 +118,6 @@ public class LinearRegressionModelGenerator {
         List<Double> yActualList = new ArrayList<>();
 
         for (Record record : testData) {
-            testRecordsCount++;
             double X1 = record.getX1();
             double X2 = record.getX2();
             double actualY = record.getY();
@@ -127,8 +125,11 @@ public class LinearRegressionModelGenerator {
             // formula: y_pred = b1X1 + b2X2 + b0
             double predictedY = (b1 * X1) + (b2 * X2) + b0;
 
-            System.out.println(String.format("Predicted: %f, %f, %f", predictedY, X1, X2));
-            System.out.println(String.format("Actual:    %f, %f, %f", actualY, X1, X2));
+            if (random() <= 0.08) {
+                System.out.println(String.format("Predicted: post score: %f, answer count: %f, accepted answer score: %f", predictedY, X1, X2));
+                System.out.println(String.format("Actual:    post score: %f, answer count: %f, accepted answer score: %f", actualY, X1, X2));
+                System.out.println("----------------------------------------------------------------------------------------");
+            }
 
             // Calculations for R-Squared, MAE, RMSE
             double error = actualY - predictedY;
@@ -137,15 +138,7 @@ public class LinearRegressionModelGenerator {
             sumAbsoluteErrors += Math.abs(error);
             sumSquaredResiduals += Math.pow(actualY - predictedY, 2);
             meanActual += actualY;
-
-            if (actualY == predictedY) {
-                correctPredictionCount++;
-            }
         }
-
-        // Print accuracy
-        double accuracy = correctPredictionCount / testRecordsCount;
-        System.out.println("Model accuracy: " + accuracy);
 
         // Calculate R-Squared, MAE, RMSE
         meanActual /= yActualList.size();
@@ -159,10 +152,17 @@ public class LinearRegressionModelGenerator {
         double mae = sumAbsoluteErrors / yActualList.size();
         double rmse = Math.sqrt(sumSquaredErrors / yActualList.size());
 
+        System.out.println(String.format("Linear Regression Model: predictedY = %fX1 + %fX2 + %f", b1, b2, b0));
+
         return new RegressionMetrics(rSquared, mae, rmse);
     }
 
     private static double squared(double num) {
         return Math.pow(num, 2);
+    }
+
+    private static double random() {
+        Random random = new Random(System.nanoTime());
+        return random.nextDouble();
     }
 }

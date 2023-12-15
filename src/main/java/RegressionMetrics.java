@@ -44,6 +44,6 @@ public class RegressionMetrics implements Writable {
     @Override
     public String toString() {
         return String.format(
-            "{\"R-squared\": %f, \"Mean Absolute Error\": %f, \"Root Mean Squared Error\": \"%f\"}", rSquared, mae, rmse);
+            "R-squared: %f, Mean Absolute Error (MAE): %f, Root Mean Squared Error (RMSE): %f", rSquared, mae, rmse);
     }
 }
