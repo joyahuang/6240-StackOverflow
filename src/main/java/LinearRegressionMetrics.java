@@ -1,9 +1,9 @@
-public class RegressionMetrics {
+public class LinearRegressionMetrics {
     private double rSquared;
     private double mae;
     private double rmse;
 
-    public RegressionMetrics(double rSquared, double mae, double rmse) {
+    public LinearRegressionMetrics(double rSquared, double mae, double rmse) {
         this.rSquared = rSquared;
         this.mae = mae;
         this.rmse = rmse;

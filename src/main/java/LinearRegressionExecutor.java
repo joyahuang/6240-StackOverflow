@@ -121,13 +121,13 @@ public class LinearRegressionExecutor {
 
         result.setPredictionResults(samplePredictionResultsList);
 
-        RegressionMetrics metrics = calculatePerformanceMetrics(yActualList, sumSquaredResiduals, sumAbsoluteErrors, sumSquaredErrors, meanActual);
+        LinearRegressionMetrics metrics = calculatePerformanceMetrics(yActualList, sumSquaredResiduals, sumAbsoluteErrors, sumSquaredErrors, meanActual);
         result.setMetrics(metrics);
 
         return result;
     }
 
-    private RegressionMetrics calculatePerformanceMetrics(List<Double> yActualList, double sumSquaredResiduals, double sumAbsoluteErrors, double sumSquaredErrors, double meanActual) {
+    private LinearRegressionMetrics calculatePerformanceMetrics(List<Double> yActualList, double sumSquaredResiduals, double sumAbsoluteErrors, double sumSquaredErrors, double meanActual) {
          // Calculate R-Squared, MAE, RMSE
         meanActual /= yActualList.size();
 
@@ -140,7 +140,7 @@ public class LinearRegressionExecutor {
         double mae = sumAbsoluteErrors / yActualList.size();
         double rmse = Math.sqrt(sumSquaredErrors / yActualList.size());
 
-        return new RegressionMetrics(rSquared, mae, rmse);
+        return new LinearRegressionMetrics(rSquared, mae, rmse);
     }
 
     private static double squared(double num) {

@@ -2,10 +2,10 @@ import java.util.List;
 
 public class LinearRegressionResult {
     private LinearRegressionModel model;
-    private RegressionMetrics metrics;
+    private LinearRegressionMetrics metrics;
     private List<PredictionResult> predictionResults;
 
-    public LinearRegressionResult(LinearRegressionModel model, RegressionMetrics metrics, List<PredictionResult> predictionResults) {
+    public LinearRegressionResult(LinearRegressionModel model, LinearRegressionMetrics metrics, List<PredictionResult> predictionResults) {
         this.model = model;
         this.metrics = metrics;
         this.predictionResults = predictionResults;
@@ -17,7 +17,7 @@ public class LinearRegressionResult {
         return this.model;
     }
 
-    protected RegressionMetrics getMetrics() {
+    protected LinearRegressionMetrics getMetrics() {
         return this.metrics;
     }
 
@@ -29,7 +29,7 @@ public class LinearRegressionResult {
         this.model = model;
     }
 
-    protected void setMetrics(RegressionMetrics metrics) {
+    protected void setMetrics(LinearRegressionMetrics metrics) {
         this.metrics = metrics;
     }
 
